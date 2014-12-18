@@ -1,54 +1,68 @@
+# SNIA Solid State Storage (SSS) Performance Test Specification (PTS) implementation.
+# See http://www.snia.org/tech_activities/standards/curr_standards/pts for more info.
+
 #!/bin/bash
 
 #Throughtput Test
 
 readonly OIO=1;
 readonly THREADS=1;
-readonly ROUNDS=10;
+readonly ROUNDS=25;
 readonly FIO="/usr/local/bin/fio"
 readonly TEST_NAME="03_Latency_test"
+LOG_FILE=${TEST_NAME}/results/test.log
+TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
 
-if [ $# -ne 1 ]
-then
-  echo "Usage: $0 /dev/<device to test>"
-  exit
+usage()
+{
+	echo "Usage: $0 /dev/<device to test>"
+    exit 0
+}
+
+if [ $# -lt 1 ] ; then
+	usage
+fi
+
+if [ ! -e $1 ] ; then
+	usage
 fi
 
 #The output from a test run is placed in the ./results folder.
 #This folder is recreated after every run.
-rm -f ${TEST_NAME}/results/* > /dev/null
-rmdir ${TEST_NAME}/results > /dev/null
+
+rm -rf ${TEST_NAME}/results > /dev/null
 mkdir -p ${TEST_NAME}/results
 
-
 # Test and device information
-echo "Running ${TEST_NAME} on device: $1" >> ${TEST_NAME}/results/test.log
-echo "Device information:" >> ${TEST_NAME}/results/test.log
-smartctl -i $1 >> ${TEST_NAME}/results/test.log
+echo "$TIMESTAMP Running ${TEST_NAME} on device: $1" >> $LOG_FILE
+
+
+echo "Device information:" >> $LOG_FILE
+smartctl -i $1 >> $LOG_FILE
 
 #purge the device
 
 hdparm --user-master u --security-set-pass PasSWorD $1
 hdparm --user-master u --security-erase PasSWorD $1
 
-echo "Purge done" >> ${TEST_NAME}/results/test.log
+echo "$TIMESTAMP Purge done" >> $LOG_FILE
 
-echo "OIO/thread = $OIO, Threads = $THREADS" >> ${TEST_NAME}/results/test.log
-echo "Test Start time: `date`" >> ${TEST_NAME}/results/test.log
-echo
+echo "OIO/thread = $OIO, Threads = $THREADS" >> $LOG_FILE
+$FIO --version >> $LOG_FILE
+echo "Test Start time: `date`" >> $LOG_FILE
 
 #Workload independent preconditioning
 #Run SEQ Workload Independent Preconditioning - Write 2X User Capacity with 128KiB SEQ writes, writing to the entire ActiveRange without LBA restrictions
-echo "Preconditioning pass 1" >> ${TEST_NAME}/results/test.log
-$FIO --name=precondition --filename=$1 --iodepth=16 --numjobs=1 --bs=128k --ioengine=libaio --rw=write --group_reporting --direct=1 --thread --refill_buffers
-echo
-echo "Preconditioning pass 2" >> ${TEST_NAME}/results/test.log
-$FIO --name=precondition --filename=$1 --iodepth=16 --numjobs=1 --bs=128k --ioengine=libaio --rw=write --group_reporting --direct=1 --thread --refill_buffers
 
-#Main test 
-echo "${TEST_NAME}"
+$FIO --name=precondition --filename=$1 --iodepth=16 --numjobs=1 --bs=128k --ioengine=libaio --rw=write --group_reporting --direct=1 --thread --refill_buffers --loops=2
+echo "$TIMESTAMP Preconditioning done" >> $LOG_FILE
 
-for PASS in {1..10};
+echo "$TIMESTAMP Starting test $TEST_NAME" >> $LOG_FILE
+
+#Test 
+echo "Starting test $TEST_NAME"
+
+for PASS in $(eval echo {1..$ROUNDS});
 do
 	for RWMIX in 100 65 0;
     do
@@ -58,7 +72,7 @@ do
 		done
 	done
 	clear
-    echo -e "${TEST_NAME} pass $PASS of 10 done" >> ${TEST_NAME}/results/test.log
+    echo -e "$TIMESTAMP ${TEST_NAME} pass $PASS of $ROUNDS done" >> $LOG_FILE
 done
 
 exit 0
