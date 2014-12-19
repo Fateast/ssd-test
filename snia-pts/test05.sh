@@ -85,13 +85,13 @@ do
 		
 	for PASS in $(eval echo {1..$ROUNDS})
 	do
-		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREAD_COUNT --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
+		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
 		sleep $SLEEP_TIME
 		echo -e "$date ${TEST_NAME} ${SUBTEST_NAME} pass $PASS of $ROUNDS done" >> $LOG_FILE
 	done
 	for PASS in $(eval echo {1..$ROUNDS})
 	do
-		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_access-C_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREAD_COUNT --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
+		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_access-C_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
 		echo -e "$date ${TEST_NAME} ${SUBTEST_NAME} Access C pass $PASS of $ROUNDS done" >> $LOG_FILE
 	done
 done
