@@ -1,179 +1,100 @@
+# SNIA Solid State Storage (SSS) Performance Test Specification (PTS) implementation.
+# See http://www.snia.org/tech_activities/standards/curr_standards/pts for more info.
+
 #!/bin/bash
 readonly OIO=8;
 readonly THREADS=16;
-readonly ROUNDS=25;
 readonly FIO="/usr/local/bin/fio"
 readonly TEST_NAME="05_Host_Idle_Recovery"
+ROUNDS=360;
+LOG_FILE=${TEST_NAME}/results/test.log
+TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
 
-if [ $# -ne 1 ]
-then
-  echo "Usage: $0 /dev/<device to test>"
-  exit
+usage()
+{
+	echo "Usage: $0 /dev/<device to test>"
+    exit 0
+}
+
+if [ $# -lt 1 ] ; then
+	usage
+fi
+
+if [ ! -e $1 ] ; then
+	usage
 fi
 
 #The output from a test run is placed in the ./results folder.
 #This folder is recreated after every run.
-rm -f ${TEST_NAME}/results/* > /dev/null
-rmdir ${TEST_NAME}/results > /dev/null
+
+rm -rf ${TEST_NAME}/results > /dev/null
 mkdir -p ${TEST_NAME}/results
 
+# Test and device information
+echo "$TIMESTAMP Running ${TEST_NAME} on device: $1" >> $LOG_FILE
 
-echo "Running ${TEST_NAME} on device: $1" >> ${TEST_NAME}/results/test.log
-echo "Device information:" >> ${TEST_NAME}/results/test.log
-smartctl -i $1 >> ${TEST_NAME}/results/test.log
+
+echo "Device information:" >> $LOG_FILE
+smartctl -i $1 >> $LOG_FILE
 
 #purge the device
 
 hdparm --user-master u --security-set-pass PasSWorD $1
 hdparm --user-master u --security-erase PasSWorD $1
 
-echo "Purge done" >> ${TEST_NAME}/results/test.log
+echo "$TIMESTAMP Purge done" >> $LOG_FILE
 
-echo "OIO/thread = $OIO, Threads = $THREADS" >> ${TEST_NAME}/results/test.log
-echo "Test Start time: `date`" >> ${TEST_NAME}/results/test.log
-echo
+echo "OIO/thread = $OIO, Threads = $THREADS" >> $LOG_FILE
+$FIO --version >> $LOG_FILE
+echo "Test Start time: `date`" >> $LOG_FILE
 
 echo "11.2.3: preconditioning"
 
 for PASS in {1..25};
 	do
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=60 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_precond_pass=${PASS}.log
+		$FIO --output-format=json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=60 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_precond_pass=${PASS}.log
 		clear
-		echo -e "${TEST_NAME} preconditioning pass $PASS of 25 done" >> ${TEST_NAME}/results/test.log
+		echo -e "$TIMESTAMP ${TEST_NAME} preconditioning pass $PASS of 25 done" >> $LOG_FILE
 	done
-echo "Preconditioning done" >> ${TEST_NAME}/results/test.log
+echo "$TIMESTAMP Preconditioning done" >> $LOG_FILE
+
 
 
 # 11.2.4 Wait State 1 Segment Including Return To Baseline
 echo "11.2.4.1: Wait State 1 Segment, Access A + Access B"
 
-for PASS in {1..360};
+declare -a SUBTEST_LIST=("State_1_AB" "State_2_AB" "State_3_AB" "State_5_AB" "State_10_AB")
+for SUBTEST_NAME in "${SUBTEST_LIST[@]}"
+do
+	case "$SUBTEST_NAME" in
+		"State_1_AB")
+			SLEEP_TIME=5
+			;;
+		"State_2_AB")
+			SLEEP_TIME=10
+			;;
+		"State_3_AB")
+			SLEEP_TIME=15
+			;;
+		"State_5_AB")
+			SLEEP_TIME=25
+			;;
+		"State_10_AB")
+			SLEEP_TIME=50
+			;;
+	esac
+		
+	for PASS in $(eval echo {1..$ROUNDS})
 	do
-#Access A
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state1_pass=${PASS}.log
-#Access B
-		sleep 5
-		clear
-		echo "Wait State 1, Access A+B, pass ${PASS} done"
+		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREAD_COUNT --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
+		sleep $SLEEP_TIME
+		echo -e "$TIMESTAMP ${TEST_NAME} ${SUBTEST_NAME} pass $PASS of $ROUNDS done" >> $LOG_FILE
 	done
-
-
-echo "11.2.4.2: Wait State 1 Segment, Access C"
-
-for PASS in {1..360};
+	for PASS in $(eval echo {1..$ROUNDS})
 	do
-#Access C
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state1_C_pass=${PASS}.log
-		clear
-		echo "Wait State 1, Access C, pass ${PASS} done"
+		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_access-C_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREAD_COUNT --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
+		echo -e "$TIMESTAMP ${TEST_NAME} ${SUBTEST_NAME} Access C pass $PASS of $ROUNDS done" >> $LOG_FILE
 	done
+done
 
-echo "Wait state 1, Access C done"
-
-# 11.2.5 Wait State 2 Segment Including Return To Baseline
-echo "11.2.5.1: Wait State 2 Segment, Access A + Access B"
-
-for PASS in {1..360};
-	do
-#Access A
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state2_pass=${PASS}.log
-#Access B
-		sleep 10
-		clear
-		echo "Wait State 2, Access A+B, pass ${PASS} done"
-	done
-
-
-echo "11.2.5.2: Wait State 1 Segment, Access C"
-
-for PASS in {1..360};
-	do
-#Access C
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state2_C_pass=${PASS}.log
-		clear
-		echo "Wait State 2, Access C, pass ${PASS} done"
-	done
-
-echo "Wait state 1, Access C done"
-
-# 11.2.6 Wait State 3 Segment Including Return To Baseline
-echo "11.2.6.1: Wait State 3 Segment, Access A + Access B"
-
-for PASS in {1..360};
-	do
-#Access A
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state3_pass=${PASS}.log
-#Access B
-		sleep 15
-		clear
-		echo "Wait State 3, Access A+B, pass ${PASS} done"
-	done
-
-
-echo "11.2.6.2: Wait State 3 Segment, Access C"
-
-for PASS in {1..360};
-	do
-#Access C
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state3_C_pass=${PASS}.log
-		clear
-		echo "Wait State 3, Access C, pass ${PASS} done"
-	done
-
-echo "Wait state 3, Access C done"
-
-
-# 11.2.7 Wait State 5 Segment Including Return To Baseline
-echo "11.2.7.1: Wait State 5 Segment, Access A + Access B"
-
-for PASS in {1..360};
-	do
-#Access A
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state5_pass=${PASS}.log
-#Access B
-		sleep 25
-		clear
-		echo "Wait State 5, Access A+B, pass ${PASS} done"
-	done
-
-
-echo "11.2.7.2: Wait State 5 Segment, Access C"
-
-for PASS in {1..360};
-	do
-#Access C
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state5_C_pass=${PASS}.log
-		clear
-		echo "Wait State 5, Access C, pass ${PASS} done"
-	done
-
-echo "Wait state 5, Access C done"
-
-# 11.2.8 Wait State 10 Segment Including Return To Baseline
-echo "11.2.8.1: Wait State 10 Segment, Access A + Access B"
-
-for PASS in {1..360};
-	do
-#Access A
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state10_pass=${PASS}.log
-#Access B
-		sleep 50
-		clear
-		echo "Wait State 10, Access A+B, pass ${PASS} done"
-	done
-
-
-echo "11.2.8.2: Wait State 10 Segment, Access C"
-
-for PASS in {1..360};
-	do
-#Access C
-		$FIO --minimal --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_state10_C_pass=${PASS}.log
-		clear
-		echo "Wait State 10, Access C, pass ${PASS} done"
-	done
-
-echo "Wait state 10, Access C done"
-
-exit
-
+exit 0
