@@ -57,11 +57,6 @@ for PASS in {1..25};
 	done
 echo "$date Preconditioning done" >> $LOG_FILE
 
-
-
-# 11.2.4 Wait State 1 Segment Including Return To Baseline
-echo "11.2.4.1: Wait State 1 Segment, Access A + Access B"
-
 declare -a SUBTEST_LIST=("State_1_AB" "State_2_AB" "State_3_AB" "State_5_AB" "State_10_AB")
 for SUBTEST_NAME in "${SUBTEST_LIST[@]}"
 do
