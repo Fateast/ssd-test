@@ -49,7 +49,7 @@ echo "Test Start time: `date`" >> $LOG_FILE
 
 echo "11.2.3: preconditioning"
 
-for PASS in {1..25};
+for PASS in {1..60};
 	do
 		$FIO --output-format=json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=60 --time_based --direct=1 --randrepeat=0 --norandommap --thread --refill_buffers --output=${TEST_NAME}/results/fio_precond_pass=${PASS}.json
 		clear
