@@ -1,18 +1,38 @@
+# SNIA Solid State Storage (SSS) Performance Test Specification (PTS) implementation.
+# See http://www.snia.org/tech_activities/standards/curr_standards/pts for more info.
+
 #!/bin/bash
 
-readonly OIO=16;
-readonly THREADS=8;
-readonly ROUNDS=600;
-readonly FIO="/usr/local/bin/fio"
-readonly TEST_NAME="04_Write_Saturation_test"
-LOG_FILE=${TEST_NAME}/results/test.log
-TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
+# SNIA PTS Test 04: Write Saturation
 
 usage()
 {
 	echo "Usage: $0 /dev/<device to test>"
     exit 0
 }
+
+function find_prog(){
+	prog="$1"
+		if [ ! -x "$prog" ]; then
+		prog="${prog##*/}"
+		p=`type -f -P "$prog" 2>/dev/null`
+		if [ "$p" = "" ]; then
+			[ "$2" != "quiet" ] && echo "$1: needed but not found, aborting." >&2
+			exit 1
+		fi
+		prog="$p"
+		[ $verbose -gt 0 ] && echo "  --> using $prog instead of $1" >&2
+	fi
+	echo "$prog"
+}
+
+readonly OIO=16;
+readonly THREADS=8;
+readonly ROUNDS=600;
+FIO=`find_prog /usr/local/bin/fio`>|| exit 1
+readonly TEST_NAME="04_Write_Saturation_test"
+LOG_FILE=${TEST_NAME}/results/test.log
+TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
 
 if [ $# -lt 1 ] ; then
 	usage
