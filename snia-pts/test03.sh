@@ -11,7 +11,7 @@ readonly ROUNDS=25;
 readonly FIO="/usr/local/bin/fio"
 readonly TEST_NAME="03_Latency_test"
 LOG_FILE=${TEST_NAME}/results/test.log
-TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
+TIMESTAMP=$(date +%Y-%m-%d %H:%M:%S)
 
 usage()
 {
@@ -26,6 +26,8 @@ fi
 if [ ! -e $1 ] ; then
 	usage
 fi
+
+hash $FIO 2>/dev/null || { echo >&2 "This script requires fio (http://git.kernel.dk/?p=fio.git) but it's not installed."; exit 1; }
 
 #The output from a test run is placed in the ./results folder.
 #This folder is recreated after every run.

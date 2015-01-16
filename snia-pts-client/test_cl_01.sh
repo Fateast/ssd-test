@@ -11,7 +11,8 @@ usage()
     exit 0
 }
 
-function find_prog(){
+function find_prog()
+{
 	prog="$1"
 		if [ ! -x "$prog" ]; then
 		prog="${prog##*/}"
@@ -25,6 +26,11 @@ function find_prog(){
 	fi
 	echo "$prog"
 }
+
+round()
+{
+echo $(printf %.$2f $(echo "scale=$2;(((10^$2)*$1)+0.5)/(10^$2)" | bc))
+};
 
 OIO=8;
 THREADS=16;
@@ -68,11 +74,12 @@ smartctl -i $1 >> $LOG_FILE
 
 for for ACT_RANGE in "${ACT_RANGES[@]}"
 do
+		WORK_RANGE=$(round ${DEV_SIZE}*${ACT_RANGE}/100 0)
 	for for ACT_RANGE_AMOUNT in "${ACT_RANGE_AMOUNTS_KiB[@]}"
 	do
 		# Calculate offsets for active zones
 		# TODO: add rounding
-		ZONESIZE=echo "$DEV_SIZE / $ACT_ZONES" | bc -l
+		ZONESIZE=$(round ${ACT_RANGE_AMOUNT_KiB}*1024/${ACT_ZONES} 0)
 		
 		# Purge the device
 		#hdparm --user-master u --security-set-pass PasSWorD $1

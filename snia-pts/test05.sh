@@ -8,6 +8,7 @@ readonly FIO="/usr/local/bin/fio"
 readonly TEST_NAME="05_Host_Idle_Recovery"
 ROUNDS=360;
 LOG_FILE=${TEST_NAME}/results/test.log
+TIMESTAMP=$(date +%Y-%m-%d %H:%M:%S)
 
 usage()
 {
@@ -23,6 +24,8 @@ if [ ! -e $1 ] ; then
 	usage
 fi
 
+hash $FIO 2>/dev/null || { echo >&2 "This script requires fio (http://git.kernel.dk/?p=fio.git) but it's not installed."; exit 1; }
+
 #The output from a test run is placed in the ./results folder.
 #This folder is recreated after every run.
 
@@ -30,7 +33,7 @@ rm -rf ${TEST_NAME}/results > /dev/null
 mkdir -p ${TEST_NAME}/results
 
 # Test and device information
-echo "`date` Running ${TEST_NAME} on device: $1" >> $LOG_FILE
+echo "$TIMESTAMP Running ${TEST_NAME} on device: $1" >> $LOG_FILE
 
 
 echo "Device information:" >> $LOG_FILE
@@ -41,11 +44,11 @@ smartctl -i $1 >> $LOG_FILE
 hdparm --user-master u --security-set-pass PasSWorD $1
 hdparm --user-master u --security-erase PasSWorD $1
 
-echo "`date` Purge done" >> $LOG_FILE
+echo "$TIMESTAMP Purge done" >> $LOG_FILE
 
 echo "OIO/thread = $OIO, Threads = $THREADS" >> $LOG_FILE
 $FIO --version >> $LOG_FILE
-echo "Test Start time: `date`" >> $LOG_FILE
+echo "Test Start time: $TIMESTAMP" >> $LOG_FILE
 
 echo "11.2.3: preconditioning"
 
@@ -55,7 +58,7 @@ for PASS in {1..60};
 		clear
 		echo -e "`date` ${TEST_NAME} preconditioning pass $PASS of 25 done" >> $LOG_FILE
 	done
-echo "`date` Preconditioning done" >> $LOG_FILE
+echo "$TIMESTAMP Preconditioning done" >> $LOG_FILE
 
 declare -a SUBTEST_LIST=("State_1_AB" "State_2_AB" "State_3_AB" "State_5_AB" "State_10_AB")
 for SUBTEST_NAME in "${SUBTEST_LIST[@]}"
@@ -82,12 +85,12 @@ do
 	do
 		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
 		sleep $SLEEP_TIME
-		echo -e "`date` ${TEST_NAME} ${SUBTEST_NAME} pass $PASS of $ROUNDS done" >> $LOG_FILE
+		echo -e "$TIMESTAMP ${TEST_NAME} ${SUBTEST_NAME} pass $PASS of $ROUNDS done" >> $LOG_FILE
 	done
 	for PASS in $(eval echo {1..$ROUNDS})
 	do
 		$FIO --output-format=json --output=${TEST_NAME}/results/fio_${SUBTEST_NAME}_access-C_pass=${PASS}.json --name=job --filename=$1 --iodepth=$OIO --numjobs=$THREADS --bs=4096 --ioengine=libaio --rw=randwrite --group_reporting --runtime=5 --direct=1 --norandommap --refill_buffers --thread
-		echo -e "`date` ${TEST_NAME} ${SUBTEST_NAME} Access C pass $PASS of $ROUNDS done" >> $LOG_FILE
+		echo -e "$TIMESTAMP ${TEST_NAME} ${SUBTEST_NAME} Access C pass $PASS of $ROUNDS done" >> $LOG_FILE
 	done
 done
 

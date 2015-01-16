@@ -11,28 +11,13 @@ usage()
     exit 0
 }
 
-function find_prog(){
-	prog="$1"
-		if [ ! -x "$prog" ]; then
-		prog="${prog##*/}"
-		p=`type -f -P "$prog" 2>/dev/null`
-		if [ "$p" = "" ]; then
-			[ "$2" != "quiet" ] && echo "$1: needed but not found, aborting." >&2
-			exit 1
-		fi
-		prog="$p"
-		[ $verbose -gt 0 ] && echo "  --> using $prog instead of $1" >&2
-	fi
-	echo "$prog"
-}
-
 readonly OIO=16;
 readonly THREADS=8;
 readonly ROUNDS=600;
 FIO=`find_prog /usr/local/bin/fio`>|| exit 1
 readonly TEST_NAME="04_Write_Saturation_test"
 LOG_FILE=${TEST_NAME}/results/test.log
-TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
+TIMESTAMP=$(date +%Y-%m-%d %H:%M:%S)
 
 if [ $# -lt 1 ] ; then
 	usage
@@ -41,6 +26,8 @@ fi
 if [ ! -e $1 ] ; then
 	usage
 fi
+
+hash $FIO 2>/dev/null || { echo >&2 "This script requires fio (http://git.kernel.dk/?p=fio.git) but it's not installed."; exit 1; }
 
 #The output from a test run is placed in the ./results folder.
 #This folder is recreated after every run.
