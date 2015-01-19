@@ -9,7 +9,7 @@ do
 	echo "$PASS, $WRITE_BAND"  >> $DATA_FILE
 done
 
-DATA_FILE="test02_data_read_1m.csv"
+DATA_FILE="test02_data_read_128k.csv"
 if [ -f $DATA_FILE ]; then rm $DATA_FILE; fi
 
 for PASS in {1..10}
