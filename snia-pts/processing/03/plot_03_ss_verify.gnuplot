@@ -1,8 +1,8 @@
 #!/usr/bin/gnuplot
-set terminal png size 1280, 1024 font "/usr/share/fonts/LiberationMono-Regular.ttf, 11"
+set terminal pngcairo size 1280, 1024 font "/usr/share/fonts/verdana.ttf, 10"
 set output 'latency-steady_state_verification_1280.png'
 set linetype 1 lw 2 pt 7
-set linetype 3 lw 2 lt 2
+set linetype 3 lw 2
 set linetype 5 lc rgb "black" lw 2
 set key box
 set key below

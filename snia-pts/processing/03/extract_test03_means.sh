@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATA_FILE="test03_data_means.csv"
+DATA_FILE="test03_data_means.dat"
 if [ -f $DATA_FILE ]; then rm $DATA_FILE; fi
 
 echo "Round, RW_mix, Block_size, Read Ave lat, Read Max lat, Write Ave lat, Write Max lat"  >> $DATA_FILE
