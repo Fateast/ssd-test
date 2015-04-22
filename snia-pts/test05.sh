@@ -2,53 +2,18 @@
 # See http://www.snia.org/tech_activities/standards/curr_standards/pts for more info.
 
 #!/bin/bash
-readonly OIO=8;
-readonly THREADS=16;
-readonly FIO="/usr/local/bin/fio"
-readonly TEST_NAME="05_Host_Idle_Recovery"
+
+#select drive type (SATA or SAS)
+DRIVE_TYPE="SATA"
+#DRIVE_TYPE="SAS"
+
+OIO=8;
+THREADS=16;
+FIO="/usr/local/bin/fio"
+TEST_NAME="05_Host_Idle_Recovery"
 ROUNDS=360;
-LOG_FILE=${TEST_NAME}/results/test.log
-TIMESTAMP=$(date +%Y-%m-%d %H:%M:%S)
 
-usage()
-{
-	echo "Usage: $0 /dev/<device to test>"
-    exit 0
-}
-
-if [ $# -lt 1 ] ; then
-	usage
-fi
-
-if [ ! -e $1 ] ; then
-	usage
-fi
-
-hash $FIO 2>/dev/null || { echo >&2 "This script requires fio (http://git.kernel.dk/?p=fio.git) but it's not installed."; exit 1; }
-
-#The output from a test run is placed in the ./results folder.
-#This folder is recreated after every run.
-
-rm -rf ${TEST_NAME}/results > /dev/null
-mkdir -p ${TEST_NAME}/results
-
-# Test and device information
-echo "$TIMESTAMP Running ${TEST_NAME} on device: $1" >> $LOG_FILE
-
-
-echo "Device information:" >> $LOG_FILE
-smartctl -i $1 >> $LOG_FILE
-
-#purge the device
-
-hdparm --user-master u --security-set-pass PasSWorD $1
-hdparm --user-master u --security-erase PasSWorD $1
-
-echo "$TIMESTAMP Purge done" >> $LOG_FILE
-
-echo "OIO/thread = $OIO, Threads = $THREADS" >> $LOG_FILE
-$FIO --version >> $LOG_FILE
-echo "Test Start time: $TIMESTAMP" >> $LOG_FILE
+drive_purge ($DRIVE_TYPE, $1)
 
 echo "11.2.3: preconditioning"
 

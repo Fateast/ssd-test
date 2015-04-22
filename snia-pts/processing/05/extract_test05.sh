@@ -7,7 +7,7 @@ if [ -f $DATA_FILE ]; then rm $DATA_FILE; fi
 
 echo "Round, IOPS"  >> $DATA_FILE
 
-for PASS in {1..120}
+for PASS in {1..60}
 do
 	WRITE_IOPS=$(cat fio_precond_pass=${PASS}.json | jsawk 'return this.jobs[0].write.iops')
 	echo "$PASS, $WRITE_IOPS"  >> $DATA_FILE
