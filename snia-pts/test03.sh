@@ -8,16 +8,20 @@
 #select drive type (SATA or SAS)
 DRIVE_TYPE="SATA"
 #DRIVE_TYPE="SAS"
+#DRIVE_TYPE="virident"
 
 OIO=1;
 THREADS=1;
 ROUNDS=25;
 TEST_NAME="03_Latency_test"
+TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
+LOG_FILE=${TEST_NAME}/results/test.log
+FIO="/usr/local/bin/fio"
 
 source test_routines.sh
 
-drive_purge ($DRIVE_TYPE, $1)
-pts_precondition ($1)
+drive_purge $DRIVE_TYPE $1
+pts_precondition $1
 
 echo "$TIMESTAMP Starting test $TEST_NAME" >> $LOG_FILE
 

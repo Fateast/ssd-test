@@ -5,9 +5,6 @@
 
 #!/bin/bash
 
-TIMESTAMP=`date "+%Y-%m-%d %H:%M:%S"`
-LOG_FILE=${TEST_NAME}/results/test.log
-FIO="/usr/local/bin/fio"
 hash $FIO 2>/dev/null || { echo >&2 "Please install fio (http://git.kernel.dk/?p=fio.git)"; exit 1; }
 
 usage()
@@ -47,6 +44,11 @@ SATA)
 	hash hdparm 2>/dev/null || { echo >&2 "Please install hdparm"; exit 1; }
 	hdparm --user-master u --security-set-pass PasSWorD $2
 	hdparm --user-master u --security-erase PasSWorD $2
+	;;
+virident)
+	hash vgc-config 2>/dev/null || { echo >&2 "Please install vgc-utils package"; exit 1; }
+#enter your device name and performance/capacity mode
+	vgc-config -d vgca -n 1 -m maxperformance
 	;;
 esac
 }
