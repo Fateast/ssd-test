@@ -26,12 +26,12 @@ set title "IOPS Steady State Convergence Plot - All block sizes"
 set xlabel 'Round'
 set ylabel 'IOPS'
 #set xrange [9:15]
-plot 'test01_data_ss_detect_512.csv' using 1:4 every ::1 title '0.5KiB' with lp, \
-'test01_data_ss_detect_4096.csv' using 1:4 every ::1 title '4KiB' with lp, \
-'test01_data_ss_detect_8192.csv' using 1:4 every ::1 title '8KiB' with lp, \
-'test01_data_ss_detect_16384.csv' using 1:4 every ::1 title '16KiB' with lp, \
-'test01_data_ss_detect_32768.csv' using 1:4 every ::1 title '32KiB' with lp, \
-'test01_data_ss_detect_65536.csv' using 1:4 every ::1 title '64KiB' with lp, \
-'test01_data_ss_detect_131072.csv' using 1:4 every ::1 title '128KiB' with lp, \
-'test01_data_ss_detect_1048576.csv' using 1:4 every ::1 title '1024KiB' with lp
+plot 'test01_data_ss_detect_512.csv' using 1:2 every ::1 title '0.5KiB' with lp, \
+'test01_data_ss_detect_4096.csv' using 1:2 every ::1 title '4KiB' with lp, \
+'test01_data_ss_detect_8192.csv' using 1:2 every ::1 title '8KiB' with lp, \
+'test01_data_ss_detect_16384.csv' using 1:2 every ::1 title '16KiB' with lp, \
+'test01_data_ss_detect_32768.csv' using 1:2 every ::1 title '32KiB' with lp, \
+'test01_data_ss_detect_65536.csv' using 1:2 every ::1 title '64KiB' with lp, \
+'test01_data_ss_detect_131072.csv' using 1:2 every ::1 title '128KiB' with lp, \
+'test01_data_ss_detect_1048576.csv' using 1:2 every ::1 title '1024KiB' with lp
 exit
